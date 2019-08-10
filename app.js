@@ -58,6 +58,8 @@ var leftTextY = (height + labelArea) / 2 - labelArea;
 
 
 svg.append("g").attr("class", "yText");
+
+
 var yText = d3.select(".yText");
 
 
@@ -78,17 +80,12 @@ yText
   .attr("class", "aText inactive y")
   .text("Lacks Healthcare (%)");
 
-
-
 // 2. Import our .csv file.
 // Import our CSV data with d3's .csv import method.
 d3.csv("assets/data/data.csv").then(function(data) {
   // Visualize the data
   visualize(data);
 });
-
-
-
 
 // 3. Create our visualization function
 function visualize(theData) {
@@ -98,7 +95,7 @@ function visualize(theData) {
   var curX = "poverty";
   var curY = "healthcare";
 
-  var xMin;
+   var xMin;
   var xMax;
   var yMin;
   var yMax;
@@ -180,7 +177,9 @@ function visualize(theData) {
 
   // Part 3: Instantiate the Scatter Plot
   // ====================================
-  
+  // This will add the first placement of our data and axes to the scatter plot.
+
+  // First grab the min and max values of x and y.
   xMinMax();
   yMinMax();
 
@@ -192,15 +191,16 @@ function visualize(theData) {
   var yScale = d3
     .scaleLinear()
     .domain([yMin, yMax])
+    // Height is inverses due to how d3 calc's y-axis placement
     .range([height - margin - labelArea, margin]);
 
   // We pass the scales into the axis methods to create the axes.
-  
+  // Note: D3 4.0 made this a lot less cumbersome then before. Kudos to mbostock.
   var xAxis = d3.axisBottom(xScale);
   var yAxis = d3.axisLeft(yScale);
 
   // Determine x and y tick counts.
-  
+  // Note: Saved as a function for easy mobile updates.
   function tickCount() {
     if (width <= 500) {
       xAxis.ticks(5);
@@ -213,7 +213,9 @@ function visualize(theData) {
   }
   tickCount();
 
-  
+  // We append the axes in group elements. By calling them, we include
+  // all of the numbers, borders and ticks.
+  // The transform attribute specifies where to place the axes.
   svg
     .append("g")
     .call(xAxis)
@@ -290,7 +292,7 @@ function visualize(theData) {
 
   
   
-  // Part 4:  Dynamic Graph
+    // Part 4: Make the Graph Dynamic
   // Select all axis text and add this d3 click event.
   d3.selectAll(".aText").on("click", function() {
     
@@ -344,14 +346,24 @@ function visualize(theData) {
         labelChange(axis, self);
       }
       else {
+        // When y is the saved axis, execute this:
+        // Make curY the same as the data name.
         curY = name;
+
+        // Change the min and max of the y-axis.
         yMinMax();
+
+        // Update the domain of y.
         yScale.domain([yMin, yMax]);
+
+        // Update Y Axis
         svg.select(".yAxis").transition().duration(300).call(yAxis);
 
         // With the axis changed, let's update the location of the state circles.
         d3.selectAll("circle").each(function() {
-          
+          // Each state circle gets a transition for it's new attribute.
+          // This will lend the circle a motion tween
+          // from it's original spot to the new location.
           d3
             .select(this)
             .transition()
@@ -363,7 +375,7 @@ function visualize(theData) {
 
         // We need change the location of the state texts, too.
         d3.selectAll(".stateText").each(function() {
-          
+          // We give each state text the same motion tween as the matching circle.
           d3
             .select(this)
             .transition()
@@ -373,7 +385,7 @@ function visualize(theData) {
             .duration(300);
         });
 
-        
+        // Finally, change the classes of the last active label and the clicked label.
         labelChange(axis, self);
       }
     }
@@ -381,20 +393,21 @@ function visualize(theData) {
 
   // Part 5: Mobile Responsive
   // =========================
-  
+  // With d3, we can call a resize function whenever the window dimensions change.
+  // This make's it possible to add true mobile-responsiveness to our charts.
   d3.select(window).on("resize", resize);
 
-  
+  // One caveat: we need to specify what specific parts of the chart need size and position changes.
   function resize() {
-    
+    // Redefine the width, height and leftTextY (the three variables dependent on the width of the window).
     width = parseInt(d3.select("#scatter").style("width"));
     height = width - width / 3.9;
     leftTextY = (height + labelArea) / 2 - labelArea;
 
-    
+    // Apply the width and height to the svg canvas.
     svg.attr("width", width).attr("height", height);
 
-    
+    // Change the xScale and yScale ranges
     xScale.range([margin + labelArea, width - margin]);
     yScale.range([height - margin - labelArea, margin]);
 
